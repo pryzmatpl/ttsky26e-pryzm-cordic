@@ -9,7 +9,8 @@ OP="${1:-0}"; A="${2:-0}"; B="${3:-0}"; N="${4:-60}"
 TB="${TB:-tb_dbg}"
 NBYTES="${NBYTES:-2}"
 IMAGE="${IMAGE:-photonip/cocotb:2.2.0}"
-VOL="${VOL:-tt26e-sim}"
+# Its own volume. Sharing the flow's volume would delete a routed run.
+VOL="${VOL:-tt26e-dbg}"
 
 docker volume create "$VOL" >/dev/null
 tar -C "$ROOT" -cf - . | docker run --rm -i -v "$VOL":/w alpine sh -lc 'rm -rf /w/*; tar -xf - -C /w'

@@ -9,7 +9,9 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(dirname "$HERE")"
 IMAGE="${IMAGE:-ghcr.io/tinytapeout/openlane2:ihp-v3.0.0.dev23}"
-VOL="${VOL:-tt26e-sim}"
+# Its own volume: this script wipes /w before exporting, and must never be
+# able to delete a routed run.
+VOL="${VOL:-tt26e-synth}"
 PDKVOL="${PDKVOL:-tt26e-pdk}"
 
 docker volume create "$VOL" >/dev/null

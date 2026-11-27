@@ -13,7 +13,9 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(dirname "$HERE")"
 N="${1:-50}"
 IMAGE="${IMAGE:-photonip/cocotb:2.2.0}"
-VOL="${VOL:-tt26e-sim}"
+# A volume of its own. Sharing the flow's volume would be destructive: this
+# script wipes /w to get a clean export, which would delete a routed run.
+VOL="${VOL:-tt26e-test}"
 
 if command -v iverilog >/dev/null 2>&1; then
   exec python3 "$HERE/sim_compare.py" --vectors "$N"

@@ -12,7 +12,8 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(dirname "$HERE")"
 IMAGE="${IMAGE:-ghcr.io/tinytapeout/openlane2:ihp-v3.0.0.dev23}"
-VOL="${VOL:-tt26e-sim}"
+# Area measurement only: it wipes /w, so it must not share the flow volume.
+VOL="${VOL:-tt26e-synth}"
 PDKVOL="${PDKVOL:-tt26e-pdk}"
 
 if ! docker volume inspect "$PDKVOL" >/dev/null 2>&1; then

@@ -47,6 +47,25 @@ jobs:
           # is the authority.
           python -m cocotb_tools.check_results results.xml
 
+      # The bring-up script is the thing a human runs on the demo board, so it
+      # is tested here before any silicon exists: the clean virtual run must
+      # pass, and the deliberately corrupted run must fail. Without the second
+      # half a self-test that always prints PASS would look identical.
+      - name: Bring-up self-test (virtual + injected defect)
+        run: |
+          python3 bringup/selftest.py --virtual
+          ! python3 bringup/selftest.py --virtual --defect
+
+      # The hardened netlist must still compute the right answer. DRC, LVS and
+      # STA all compare the design against itself and pass for a design with
+      # tied-off outputs; this is the check that fails when place-and-route
+      # broke something. It runs the committed gds-build netlist if one is
+      # present, and says so plainly when it is not, rather than passing
+      # silently.
+      - name: Structural and interface check on the netlist
+        run: python3 pdk/verify-useful.py
+        if: always()
+
       - name: Test Summary
         uses: test-summary/action@v2.4
         with:

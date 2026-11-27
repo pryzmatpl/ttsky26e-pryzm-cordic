@@ -22,3 +22,5 @@ pdk/metrics.last.json
 
 # local runs
 runs/
+/**/system.txt
+pdk/host-cred-helper.sh

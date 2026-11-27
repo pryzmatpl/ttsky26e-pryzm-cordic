@@ -47,9 +47,22 @@
 
   "RUN_CTS": 1,
 
-  "//": "The shuttle's 2x2 template supplies the grid; RT_MAX_LAYER comes from",
-  "//": "the shuttle config, so it is deliberately absent here.",
+  "//": "The shuttle's 2x2 template supplies the grid; RT_MAX_LAYER and",
+  "//": "VDD_PIN/GND_PIN come from the shuttle config, so they are absent here.",
   "FP_PDN_MULTILAYER": 0,
+
+  "//": "The precheck rejects a power port more than 10 um from the die edge.",
+  "//": "The met4 straps start on the core boundary, so BOTTOM/TOP_MARGIN_MULT",
+  "//": "is the whole story: they are in multiples of site height, and this",
+  "//": "LEF measures 2.66 um (the straps landed at 4 x 2.66 = 10.64).",
+  "//": "At the default 4 the first strap is 10.64 um in - over the limit.",
+  "//": "At 3 it is 7.98 um - inside it - and the core gets 2.66 um TALLER at",
+  "//": "each edge, so there is more routing area rather than less.",
+  "//": "Do NOT set PDN_EXTEND_TO=boundary to fix this: it does move the straps",
+  "//": "to the edge, but it runs them across the IO ring and detailed routing",
+  "//": "stalls at 5 violations. Measured, not assumed.",
+  "BOTTOM_MARGIN_MULT": 3,
+  "TOP_MARGIN_MULT": 3,
 
   "//": "MAGIC_DEF_LABELS causes LVS mismatches with the shuttle's templates.",
   "MAGIC_DEF_LABELS": 0,

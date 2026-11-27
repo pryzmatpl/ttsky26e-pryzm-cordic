@@ -1,13 +1,24 @@
 #!/usr/bin/env bash
 # Place, route and stream out tt_um_pryzm_cordic on sky130A with LibreLane.
 #
-# This is the gate that synthesis alone cannot answer: does the design close at
-# the target clock, does it route with no DRC violations, and does LVS agree
-# with the netlist? The Tiny Tapeout shuttle does exactly this in CI; running
-# it here means a failure is found before submission rather than after.
+#   ./pdk/flow.sh              # the shuttle's floorplan, 20 MHz
+#   CLOCK_NS=40 ./pdk/flow.sh  # tighter clock
 #
-#   ./pdk/flow.sh              # default 50 MHz
-#   CLOCK_NS=25 ./pdk/flow.sh  # 40 MHz
+# The config is src/config.json merged with the keys tt_tool.py would generate,
+# in exactly the order the shuttle merges them. That ordering is the whole
+# point: the shuttle's generated keys WIN over src/config.json, so anything this
+# script set differently would be a different chip.
+#
+# Two things this script used to get wrong, both of which made a green local run
+# meaningless:
+#
+#  1. It invented its own floorplan (DIE_AREA 334x216, no template). The shuttle
+#     uses 334.88x225.76 with FP_DEF_TEMPLATE=tt_block_2x2_pg.def, and that
+#     template is what puts the core boundary 10.64 um inside the die - so a
+#     local run could never reproduce a precheck failure caused by the template.
+#
+#  2. It dropped VDD_PIN/GND_PIN/RT_MAX_LAYER, so the power net names and the
+#     top routing layer differed from the shuttle's.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(dirname "$HERE")"
@@ -15,12 +26,18 @@ IMAGE="${IMAGE:-photonip/openlane2:ihp-v3.0.0.dev23-klayout}"
 VOL="${VOL:-tt26e-sim}"
 PDKVOL="${PDKVOL:-tt26e-pdk}"
 CLOCK_NS="${CLOCK_NS:-20}"
+TT="${TT_SUPPORT_TOOLS:-/tmp/ttst}"
+
+[ -d "$TT/tech/sky130A/def" ] || {
+  echo "no shuttle templates at $TT/tech (set TT_SUPPORT_TOOLS)"; exit 1; }
 
 docker volume create "$VOL" >/dev/null
 tar -C "$ROOT" -cf - . | docker run --rm -i -v "$VOL":/w alpine sh -lc 'rm -rf /w/*; tar -xf - -C /w'
+# The shuttle's tech/ tree (the .def floorplans) is not in this repo, so it is
+# exported next to the design the way tt-gds-action lays it out.
+tar -C "$(dirname "$TT")" -cf - "$(basename "$TT")/tech" \
+  | docker run --rm -i -v "$VOL":/w alpine sh -lc 'tar -xf - -C /w; rm -rf /w/tt_tech; mv /w/*/tech /w/tt_tech'
 
-# The image's entrypoint is the iic-osic-tools launcher; `--skip` runs the
-# command directly instead of starting a desktop session.
 docker run --rm -v "$VOL":/w -v "$PDKVOL":/pdk -e CLOCK_NS="$CLOCK_NS" \
   --entrypoint /bin/bash "$IMAGE" -lc '
 set -e
@@ -32,49 +49,70 @@ mkdir -p pdk/runs
 python3 - <<"PY" > pdk/config.json
 import json, os
 clock = float(os.environ.get("CLOCK_NS", "20"))
-cfg = {
-  "DESIGN_NAME": "tt_um_pryzm_cordic",
-  "VERILOG_FILES": ["dir::../src/project.v"],
-  "CLOCK_PORT": "clk",
-  "CLOCK_PERIOD": clock,
-  "PDK": "sky130A",
-  "STD_CELL_LIBRARY": "sky130_fd_sc_hd",
-  # The die here is the user core; the shuttle adds its own pad ring and
-  # multiplexer around it.
-  # The full 2x2 tile: 334 x 216 um. An earlier run used 320 x 202 um and hit
-  # 2,779 detailed-route violations at 85.7 % density — the design fits the
-  # area but not the routing budget. At the real tile it is 76.8 %, which is
-  # where the clean run was measured. Do not shrink this to "make it fit":
-  # density is a routing constraint, not just an area one.
-  "FP_SIZING": "absolute",
-  "DIE_AREA": [0, 0, 334, 216],
-  "PL_TARGET_DENSITY_PCT": 45,
-  # A transition limit of 1.5 ns is 7.5 % of a 20 ns period, which is far
-  # tighter than the 3 ns the 20 MHz target needs and forces cell upsizing that
-  # doubles the area. 3 ns is ~15 % of the period and still closes timing.
-  "MAX_FANOUT_CONSTRAINT": 6,
-  "MAX_TRANSITION_CONSTRAINT": 3.0,
-  # LibreLane 3.x names these as resizer design limits; the older
-  # PL_RESIZER_* keys do not exist in this version and are rejected outright.
-  "DESIGN_REPAIR_MAX_SLEW_PCT": 20,
-  "DESIGN_REPAIR_MAX_CAP_PCT": 20,
-  "pdk::sky130*": {
-    "FP_CORE_UTIL": 45,
-    "scl::sky130_fd_sc_hd": {"CLOCK_PERIOD": clock}
-  },
-  "pdk::sky130A": {"SYNTH_STRATEGY": "AREA 1"},
-  "meta": {"version": 3},
+
+# The design own config, exactly as committed. Comments are "//" keys, which
+# LibreLane would reject, so they are dropped - which is what read_config does
+# on the shuttle side too.
+user = {k: v for k, v in json.load(open("src/config.json")).items()
+        if not k.startswith("//")}
+
+# The keys tt_tool.py --create-user-config writes, in its own order. These take
+# precedence over src/config.json in create_merged_config(override_config).
+shuttle = {
+    "DESIGN_NAME": "tt_um_pryzm_cordic",
+    "VERILOG_FILES": ["dir::../src/project.v"],
+    "DIE_AREA": "0 0 334.88 225.76",
+    "FP_DEF_TEMPLATE": "dir::../tt_tech/sky130A/def/tt_block_2x2_pg.def",
+    "VDD_PIN": "VPWR",
+    "GND_PIN": "VGND",
+    "RT_MAX_LAYER": "met4",
+    # From the PDK librelane_config block, which the shuttle also applies.
+    "PDK": "sky130A",
+    "STD_CELL_LIBRARY": "sky130_fd_sc_hd",
+    "FP_SIZING": "absolute",
+    "CLOCK_PERIOD": clock,
 }
-print(json.dumps(cfg, indent=2))
+
+merged = dict(user)
+merged.update(shuttle)
+
+# src/config.json is written the way the shuttle writes it: 0/1 for flags and a
+# space-separated DIE_AREA. LibreLane 3 with meta.version 3 refuses to coerce
+# those, so the types are fixed up here by meaning, not by guesswork:
+#   DIE_AREA      "x0 y0 x1 y1"  -> [x0, y0, x1, y1]
+#   any flag      0 / 1          -> False / True
+_DIE = {"DIE_AREA", "CORE_AREA"}
+_FLAGS = {k for k in merged if k.startswith(("RUN_", "FP_PDN", "PDN_", "MAGIC_",
+                                             "LINTER_", "GRT_", "DESIGN_REPAIR_",
+                                             "PL_RESIZER", "PL_" ) ) and isinstance(merged[k], int)}
+
+fixed = {}
+for k, v in merged.items():
+    if k in _DIE and isinstance(v, str) and len(v.split()) == 4:
+        v = [float(x) for x in v.split()]
+    elif isinstance(v, int) and not isinstance(v, bool):
+        # Only the keys that are genuinely boolean toggles, never a count.
+        if k in ("RUN_CTS", "RUN_KLAYOUT_XOR", "RUN_KLAYOUT_DRC", "RUN_LINTER",
+                 "LINTER_INCLUDE_PDK_MODELS", "MAGIC_DEF_LABELS",
+                 "MAGIC_WRITE_LEF_PINONLY", "GRT_ALLOW_CONGESTION",
+                 "DESIGN_REPAIR_BUFFER_OUTPUT_PORTS", "PDN_MULTILAYER",
+                 "FP_PDN_MULTILAYER", "PDN_SKIPTRIM", "PDN_ENABLE_RAILS",
+                 "PDN_ENABLE_PINS", "PDN_ENABLE_GLOBAL_CONNECTIONS"):
+            v = bool(v)
+    fixed[k] = v
+
+print(json.dumps(fixed, indent=2))
 PY
 
-echo "--- LibreLane version"
-librelane --version 2>/dev/null || python3 -c "import librelane; print(librelane.__version__)"
+echo "--- effective floorplan"
+python3 -c "
+import json; c=json.load(open(\"pdk/config.json\"))
+for k in (\"DIE_AREA\",\"FP_DEF_TEMPLATE\",\"VDD_PIN\",\"GND_PIN\",\"RT_MAX_LAYER\",\"PDN_EXTEND_TO\",\"CLOCK_PERIOD\",\"PL_TARGET_DENSITY_PCT\"):
+    print(f\"  {k:20s} {c.get(k)}\")"
 
 echo "--- running the flow (this takes minutes)"
-# -j is the job count (`librelane --help`: "-j, --jobs INTEGER"). There is no
-# --threads option in this version: passing it makes LibreLane exit before it
-# reads the config, which is what happened on the first attempt at this script.
+# -j is the job count. There is no --threads option in this version: passing it
+# makes LibreLane exit before it reads the config.
 #
 # Pinning it also fixes a real reproducibility problem. Left unset, LibreLane
 # hands OpenROAD an empty thread count ([ORD-0032]), OpenROAD sizes its pool

@@ -91,7 +91,7 @@ def main():
 
     work = os.path.join(ROOT, "test", "simwork")
     os.makedirs(work, exist_ok=True)
-    src = os.path.join(ROOT, "src", "project.v")
+    src = os.path.join(ROOT, os.environ.get("SIM_SRC", "src/project.v"))
     tb = os.path.join(HERE, "tb_sim.v")
 
     vecs = build_vectors(args.vectors)
@@ -99,7 +99,18 @@ def main():
         for op, a, b in vecs:
             f.write(f"{op} {a} {b}\n")
 
-    rc = subprocess.run(["iverilog", "-g2012", "-o", "sim.vvp", tb, src],
+    # Gate-level runs need the PDK cell models and the power-pin defines; RTL
+    # needs neither. GL_SIM=1 switches to the hardened netlist.
+    sources = [tb, src]
+    extra: list[str] = []
+    if os.environ.get("GL_SIM"):
+        pdk = os.environ["PDK_SC_LIB"]
+        extra = ["-DFUNCTIONAL", "-DUSE_POWER_PINS", "-DGL_TEST", "-DSIM",
+                 "-DUNIT_DELAY=#1"]
+        sources = [tb, os.path.join(pdk, "primitives.v"),
+                   os.path.join(pdk, "sky130_fd_sc_hd.v"), src]
+
+    rc = subprocess.run(["iverilog", "-g2012", *extra, "-o", "sim.vvp", *sources],
                         cwd=work, capture_output=True, text=True)
     if rc.returncode != 0:
         print(rc.stdout, rc.stderr)
@@ -116,6 +127,7 @@ def main():
         print(f"vector count mismatch: sent {len(vecs)}, got {len(rows)}")
         return 1
 
+    label = os.environ.get("SIM_LABEL", "RTL")
     if args.defect:
         rows[0][3] = str(int(rows[0][3]) ^ 0x0001)
 
@@ -138,7 +150,7 @@ def main():
     for name, (ok, bad) in per_op.items():
         print(f"  {name:6s} {ok:5d} pass {bad:5d} fail")
     total = sum(sum(v) for v in per_op.values())
-    print(f"\n{total - fails}/{total} vectors exact ({fails} fail)")
+    print(f"\n[{label}] {total - fails}/{total} vectors exact ({fails} fail)")
 
     if not args.keep:
         shutil.rmtree(work, ignore_errors=True)

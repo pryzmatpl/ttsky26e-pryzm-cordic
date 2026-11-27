@@ -26,9 +26,24 @@ module tb;
   integer w0, w1;
   integer guard;
 
+  // At gate level the top has VPWR/VGND ports and the cells read them for
+  // their power pins. Left unconnected they float, every cell output is X,
+  // and the comparison sees "X" instead of a number. The RTL has no such
+  // ports, so they are tied only under -DGL_TEST.
+`ifdef GL_TEST
+  // VPWR/VGND are inout on the hardened top, so they are nets and need a
+  // continuous drive, not a procedural assignment.
+  wire VPWR = 1'b1;
+  wire VGND = 1'b0;
+  tt_um_pryzm_cordic dut (
+      .ui_in(ui_in), .uo_out(uo_out), .uio_in(uio_in), .uio_out(uio_out),
+      .uio_oe(uio_oe), .ena(1'b1), .clk(clk), .rst_n(rst_n),
+      .VPWR(VPWR), .VGND(VGND));
+`else
   tt_um_pryzm_cordic dut (
       .ui_in(ui_in), .uo_out(uo_out), .uio_in(uio_in), .uio_out(uio_out),
       .uio_oe(uio_oe), .ena(1'b1), .clk(clk), .rst_n(rst_n));
+`endif
 
   always #5 clk = ~clk;
 

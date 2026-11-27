@@ -24,17 +24,27 @@ jobs:
         shell: bash
         run: pip install -r test/requirements.txt
 
-      - name: Model self-test (pure Python, no simulator)
+      # The model is the reference the RTL is compared against, so it is run
+      # first: if it does not hold its own error budget, nothing downstream
+      # means anything.
+      - name: Golden model self-test
         run: python3 model/cordic16.py
 
-      - name: RTL vs model (Icarus, word-exact)
-        run: ./test/run.sh 200
+      # Word-exact RTL vs model. Runs iverilog directly (no docker), which is
+      # what makes this job cheap enough to gate every push.
+      - name: RTL vs model (word-exact)
+        env:
+          # sim_compare.py looks for the simulator on PATH; CI has no docker.
+          SIM_NO_DOCKER: "1"
+        run: python3 test/sim_compare.py --vectors 400
 
       - name: cocotb suite
         run: |
           cd test
           make clean
           make
+          # `make` exits 0 even when a cocotb test fails, so the results file
+          # is the authority.
           python -m cocotb_tools.check_results results.xml
 
       - name: Test Summary
@@ -43,7 +53,7 @@ jobs:
           paths: "test/results.xml"
         if: always()
 
-      - name: upload waveform and test results
+      - name: Upload waveform and test results
         if: success() || failure()
         uses: actions/upload-artifact@v7
         with:

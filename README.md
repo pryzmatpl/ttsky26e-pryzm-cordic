@@ -14,6 +14,13 @@ simulation → synthesis → GDS → a design a foundry can actually make.
 | Clock | **20 MHz**, closed at every corner |
 | Interface | 8-bit byte-serial command/data port on `ui_in`/`uo_out`, handshake on `uio` |
 
+[![tt_um_pryzm_cordic in the TinyTapeout GDS viewer](docs/img/viewer.webp)][viewer]
+
+The routed 2x2 layout, straight from the shuttle's CI. Click the image to open
+it interactively in the [TinyTapeout GDS viewer][viewer].
+
+[viewer]: https://gds-viewer.tinytapeout.com/?pdk=sky130A&model=https%3A%2F%2Fpryzmatpl.github.io%2Fttsky26e-pryzm-cordic%2F%2Ftinytapeout.oas
+
 ## Why this chip
 
 `tt_um_cordic` (Chirag Kamath) taped out on **this same shuttle** as a 1x1,
@@ -50,13 +57,14 @@ the area is one adder plus a 16x16 multiplier rather than fifteen adders.
    command that produced it. `docs/evidence/README.md` §5 lists what is *not*
    claimed.
 
-## Layout
+## Repository layout
 
 ```
 src/            RTL — project.v (tt_um_pryzm_cordic) and nothing else
 test/           cocotb bench, tb.v, Makefile
 model/          16-bit golden model (bit-exact reference for the RTL)
 docs/           info.md (datasheet text), evidence/, survey of the shuttle
+docs/img/       the GDS viewer screenshot used above
 ```
 
 ## Building

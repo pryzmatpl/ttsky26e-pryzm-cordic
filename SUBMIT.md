@@ -31,11 +31,12 @@ rehearsal, not a substitute.
 
 On `app.tinytapeout.com`: shuttle **TTSKY26E**, project from repo, **2x2 tiles**.
 
-2x2 is measured, not chosen: placed cell area is 55,410 µm², a 1x2 tile is
-36,072 µm², and a 1x2 die makes LibreLane refuse with
-`[GPL-0301] Utilization 142 % exceeds 100 %`. Removing operations does not
-help (~30 µm² per operation — the shared datapath sizes the die). Evidence:
-`docs/evidence/README.md` §3, `synth/README.md`.
+2x2 is measured, not chosen: placed cell area is **62,362 µm²** on a
+72,144 µm² die, a 1x2 tile provides 36,072 µm², and a 1x2 die makes LibreLane
+refuse with `[GPL-0301] Utilization 142 % exceeds 100 %`. Removing operations
+does not help (~30 µm² per operation — the shared datapath sizes the die).
+A 320×202 µm die fits the *area* but fails *routing*: 2,779 DRC violations at
+85.7 % density. Evidence: `docs/evidence/README.md` §3, `synth/README.md`.
 
 ## 3. Decide the clock claim
 
@@ -43,7 +44,7 @@ help (~30 µm² per operation — the shared datapath sizes the die). Evidence:
 
 | clock period | worst-corner setup WS | verdict |
 |---|---|---|
-| 50 ns (20 MHz) | **+24.73 ns** | closes, TNS 0 |
+| 50 ns (20 MHz) | **+26.14 ns** | closes, TNS 0 |
 | 40 ns (25 MHz) | **−1.67 ns** | fails |
 
 20 MHz is the honest number and it is what the datasheet publishes. If you
@@ -54,6 +55,7 @@ period — not an edit to the YAML.
 
 | Check | Result | Command |
 |---|---|---|
+| GDS read back | 334.000 × 216.000 µm, 42 layers, 664,025 shapes, LEF matches | `./pdk/verify-gds.sh` |
 | RTL ≡ golden model (word equality) | **9736/9736 exact** | `./test/run.sh 2000` |
 | cocotb suite | **2/2 pass** (1552 transactions) | `cd test && make` |
 | the check can fail | fault injection detected | see `docs/evidence/README.md` §1 |

@@ -82,10 +82,10 @@ Placed and routed on sky130A with LibreLane 3.1, on a 2x2 die:
 | DRC | **0** |
 | LVS | **circuits match uniquely** |
 | slew violations | **0** |
-| cells | 55,410 um2 on a 64,640 um2 die |
+| cells | 62,362 um2 on a 72,144 um2 die |
 | GDS | streamed |
 
-It does **not** fit a 1x2 tile: the placed design needs 55,410 um2 and a 1x2
+It does **not** fit a 1x2 tile: the placed design needs 62,362 um2 and a 1x2
 tile provides 36,072 um2. The tile count is a measurement, not a preference —
 `docs/evidence/README.md` §3 records the experiments.
 

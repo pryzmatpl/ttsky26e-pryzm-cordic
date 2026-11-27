@@ -11,9 +11,11 @@ project:
   clock_hz:     20000000
 
   # How many tiles your design occupies. A single tile is about 167x108 uM.
-  # 2x2, not 1x2: the datapath needs 55,410 um2 once placed (1x2 provides
+  # 2x2, not 1x2: the datapath needs 62,362 um2 once placed (1x2 provides
   # 36,072), and removing operations does not change that — the shared 18-bit
   # adder, arctangent operand mux and 34-bit accumulate path size the die.
+  # A 320x202 um die fits the area but not the routing: 2,779 DRC violations
+  # at 85.7% density. Density is a routing constraint, not just an area one.
   tiles: "2x2"                          # Valid: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2, 8x2
 
   # The top module name must start with "tt_um_". Keep it unique.

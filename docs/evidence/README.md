@@ -27,9 +27,9 @@ Run on a 2x2-sized die (320 x 202 µm user core). Numbers from
 
 | Result | Value |
 |---|---|
-| Placed instance area | **55,410 µm²** on a 64,640 µm² die |
-| Instances | 8,789 |
-| Routed wirelength | 128,833 µm |
+| Placed instance area | **62,362 µm²** on a 72,144 µm² die (2x2) |
+| Instances | 10,810 |
+| Routed wirelength | 113,797 µm |
 | Detailed-route violations | **0** |
 | LVS (netgen) | **"Circuits match uniquely"** — 0 errors |
 | **Slew violations** | **0** |
@@ -42,11 +42,11 @@ Run on a 2x2-sized die (320 x 202 µm user core). Numbers from
 
 | Corner | Setup WS |
 |---|---|
-| max_ss_100C_1v60 (worst) | **+24.73 ns** |
-| nom_ss_100C_1v60 | +25.18 ns |
-| min_ss_100C_1v60 | +25.70 ns |
-| max_tt_025C_1v80 | +36.14 ns |
-| max_ff_n40C_1v95 | +37.46 ns |
+| max_ss_100C_1v60 (worst) | **+26.14 ns** |
+| nom_ss_100C_1v60 | +26.51 ns |
+| min_ss_100C_1v60 | +26.90 ns |
+| max_tt_025C_1v80 | +35.60 ns |
+| max_ff_n40C_1v95 | +37.12 ns |
 
 **Setup TNS 0 at every corner.** The design closes at 20 MHz with large
 margin; an earlier run at 40 ns (25 MHz) failed the slow corner by 1.67 ns, so
@@ -60,14 +60,18 @@ This is the most important honest number in the repository.
 |---|---|---|
 | cells, LibreLane mapper | 34,036 µm² | `06-yosys-synthesis/*.log` |
 | cells, bare yosys (`synth/report.sh`) | 24,498 µm² | `synth/stat.last.txt` |
-| **placed instance area** | **55,410 µm²** | `pdk/metrics.2x2.json: design__instance__area` |
+| **placed instance area** | **62,362 µm²** | `pdk/metrics.2x2.json: design__instance__area` |
 | 1x1 tile | 18,036 µm² | 167 × 108 |
 | 1x2 tile | 36,072 µm² | 167 × 216 |
-| 2x2 tile | 72,144 µm² | 334 × 216 |
+| 2x2 tile | **72,144 µm²** | 334 × 216 |
 
 A 1x2 tile cannot hold the design: the *synthesised* cell area is 94 % of the
-tile and the *placed* area is 154 % of it. Forcing a 1x2 die makes the flow
+tile and the *placed* area is 173 % of it. Forcing a 1x2 die makes the flow
 report `[GPL-0301] Utilization 142 % exceeds 100 %` — it refuses, correctly.
+
+A 320 x 202 µm die (85.7 % density) also fails, but at routing rather than
+placement: 2,779 detailed-route violations. Density is a routing constraint,
+not just an area one, so the full 334 x 216 µm tile is what runs.
 
 Removing operations does not help: dropping HYPOT, MUL or both changes the area
 by ~30 µm² (`./synth/experiment.sh`), because the shared 18-bit adder, the
@@ -111,5 +115,13 @@ one-line `volare enable`.
   at some area cost; that trade was not taken.
 - **The `_2` drive strength is what LibreLane chose**, not a hand-tuned pick.
   Area and power would change under a different strategy.
+- **Earlier runs of this design produced different results, and the cause was
+  our script, not the tool.** `pdk/flow.sh` passed `--threads`, which this
+  LibreLane does not have (`-j/--jobs` is the real flag), and before that it
+  passed no job count at all, so OpenROAD sized its pool from the host. Two
+  runs on different pool sizes gave 0 and 2,779 detailed-route violations.
+  The numbers above come from a run with the job count pinned (`-j 8`) and are
+  reproducible with `./pdk/flow.sh`; a DRC result from an unpinned run was not
+  a statement about the design.
 - **The 20 MHz figure is a flow result, not a characterised number.** No
   silicon has measured this design.

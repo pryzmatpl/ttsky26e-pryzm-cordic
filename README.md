@@ -9,7 +9,7 @@ simulation → synthesis → GDS → a design a foundry can actually make.
 | Shuttle | TTSKY26e (`TinyTapeout/tinytapeout-sky-26e`), closes **2026-11-30** |
 | PDK | `sky130A` (open_pdks `8afc8346a57fe1ab7934ba5a6056ea8b43078e71`) |
 | Flow | LibreLane `3.0.14` (`LIBRELANE_TAG=3.0.0.dev40`) |
-| Tiles | **2x2** (334 x 216 µm) |
+| Tiles | **2x2** (334 x 216 µm, 72,144 µm²) |
 | Top module | `tt_um_pryzm_cordic` |
 | Clock | **20 MHz**, closed at every corner |
 | Interface | 8-bit byte-serial command/data port on `ui_in`/`uo_out`, handshake on `uio` |
@@ -45,7 +45,7 @@ the area is one adder plus a 16x16 multiplier rather than fifteen adders.
    — all inside the 32 LSB (2^-10) budget.
 3. **Full physical closure on sky130A.** LibreLane 3.1: **DRC 0, LVS "circuits
    match uniquely", setup TNS 0 at every corner, hold +0.11 ns, 0 slew
-   violations**, GDS streamed (55,410 µm² of cells on a 2x2 die).
+   violations**, GDS streamed (62,362 µm² of cells on a 2x2 die).
 4. **Re-derivable evidence.** Every number in `docs/evidence/` names the
    command that produced it. `docs/evidence/README.md` §5 lists what is *not*
    claimed.

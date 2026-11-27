@@ -39,14 +39,15 @@ cfg = {
   "CLOCK_PERIOD": clock,
   "PDK": "sky130A",
   "STD_CELL_LIBRARY": "sky130_fd_sc_hd",
-  # 1x2 tiles: 167 x 216 um. The die here is the user core; the shuttle adds
-  # its own pad ring and multiplexer around it.
-  # 2x2 tiles = 334 x 216 um. Measured: the four-operation datapath needs
-  # ~34,000 um2 of cells (LibreLane mapper) and ~59,000 um2 placed once the
-  # resizer sizes for slew, so a 1x2 tile (36,072 um2) cannot hold it and a
-  # 2x2 tile (72,144 um2) closes at ~82 % raw density.
+  # The die here is the user core; the shuttle adds its own pad ring and
+  # multiplexer around it.
+  # The full 2x2 tile: 334 x 216 um. An earlier run used 320 x 202 um and hit
+  # 2,779 detailed-route violations at 85.7 % density — the design fits the
+  # area but not the routing budget. At the real tile it is 76.8 %, which is
+  # where the clean run was measured. Do not shrink this to "make it fit":
+  # density is a routing constraint, not just an area one.
   "FP_SIZING": "absolute",
-  "DIE_AREA": [0, 0, 320, 202],
+  "DIE_AREA": [0, 0, 334, 216],
   "PL_TARGET_DENSITY_PCT": 45,
   # A transition limit of 1.5 ns is 7.5 % of a 20 ns period, which is far
   # tighter than the 3 ns the 20 MHz target needs and forces cell upsizing that
@@ -71,5 +72,15 @@ echo "--- LibreLane version"
 librelane --version 2>/dev/null || python3 -c "import librelane; print(librelane.__version__)"
 
 echo "--- running the flow (this takes minutes)"
-librelane pdk/config.json --run-tag tt26e --condensed 2>&1 | tail -60 || true
+# -j is the job count (`librelane --help`: "-j, --jobs INTEGER"). There is no
+# --threads option in this version: passing it makes LibreLane exit before it
+# reads the config, which is what happened on the first attempt at this script.
+#
+# Pinning it also fixes a real reproducibility problem. Left unset, LibreLane
+# hands OpenROAD an empty thread count ([ORD-0032]), OpenROAD sizes its pool
+# from the host core count, and the detailed router is not reproducible across
+# pool sizes: the same RTL and config produced 0 and then 2779 DRC violations
+# on two runs. With the count pinned, a DRC result is a statement about the
+# design rather than about the machine.
+librelane pdk/config.json --run-tag tt26e -j "${JOBS:-8}" --condensed 2>&1 | tail -60 || true
 '

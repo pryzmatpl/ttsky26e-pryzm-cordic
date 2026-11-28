@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Place, route and stream out tt_um_pryzm_cordic on sky130A with LibreLane.
 #
-#   ./pdk/flow.sh              # the shuttle's floorplan, 20 MHz
+#   ./pdk/flow.sh              # the shuttle's floorplan, 20 MHz (read from src/config.json)
 #   CLOCK_NS=40 ./pdk/flow.sh  # tighter clock
 #
 # The config is src/config.json merged with the keys tt_tool.py would generate,
@@ -19,13 +19,24 @@
 #
 #  2. It dropped VDD_PIN/GND_PIN/RT_MAX_LAYER, so the power net names and the
 #     top routing layer differed from the shuttle's.
+#
+# A third one is fixed here. CLOCK_NS was defaulted to 20, which is 50 MHz, and
+# then written into CLOCK_PERIOD - but info.yaml and src/config.json both say
+# 20 MHz (50 ns). So a plain `./pdk/flow.sh` built a 50 MHz chip and the launch
+# lines called it "the shuttle's floorplan, 20 MHz". It surfaced on 2026-11-28
+# as a run whose worst corner missed setup by 3.4 ns: that is the design doing
+# exactly what it was told, at half the period. The period now comes from
+# src/config.json, which is the number the shuttle merges and the number the
+# datasheet prints, and CLOCK_NS is an explicit override rather than a default.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(dirname "$HERE")"
 IMAGE="${IMAGE:-photonip/openlane2:ihp-v3.0.0.dev23-klayout}"
 VOL="${VOL:-tt26e-sim}"
 PDKVOL="${PDKVOL:-tt26e-pdk}"
-CLOCK_NS="${CLOCK_NS:-20}"
+# Default = what src/config.json says. 50 ns = 20 MHz, the frequency info.yaml
+# publishes. Override only to probe a tighter clock; the shipped chip is 20 MHz.
+CLOCK_NS="${CLOCK_NS:-$(python3 -c "import json;print(json.load(open('$(dirname "$0")/../src/config.json'))['CLOCK_PERIOD'])")}"
 TT="${TT_SUPPORT_TOOLS:-/tmp/ttst}"
 
 [ -d "$TT/tech/sky130A/def" ] || {
@@ -57,7 +68,7 @@ mkdir -p pdk/runs
 
 python3 - <<"PY" > pdk/config.json
 import json, os
-clock = float(os.environ.get("CLOCK_NS", "20"))
+clock = float(os.environ.get("CLOCK_NS", "50"))
 
 # The design own config, exactly as committed. Comments are "//" keys, which
 # LibreLane would reject, so they are dropped - which is what read_config does

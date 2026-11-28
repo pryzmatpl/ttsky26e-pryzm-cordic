@@ -66,6 +66,16 @@ jobs:
         run: python3 pdk/verify-useful.py
         if: always()
 
+      # Whether the committed tt_submission/ bundle is this design at all.
+      # On 2026-11-28 it held a 187-cell stub whose uo_out was eight tie cells:
+      # the bundle passed every self-comparison and shipped anyway. Check 1 of
+      # verify-useful.py catches the same thing, but this one also cross-checks
+      # the GDS placement count against the netlist so a mismatched pair cannot
+      # be packed. It runs separately so the failure names the bundle.
+      - name: Committed bundle is the design, not a stub
+        run: bash pdk/check-bundle.sh
+        if: always()
+
       - name: Test Summary
         uses: test-summary/action@v2.4
         with:

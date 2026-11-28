@@ -72,6 +72,31 @@ def main() -> int:
         print("No GDS: the flow has not finished. Run ./pdk/flow.sh first.")
         return 1
 
+    # A finished GDS is not enough: check the netlist next to it is the design.
+    # On 2026-11-28 this bundle was regenerated from a run whose netlist had 187
+    # logic cells and every uo_out bit tied to a tie cell, and that shipped.
+    # The size question ("2.6 MB instead of 7.7 MB") was the symptom of exactly
+    # this. Refuse to pack a stub.
+    nl = subprocess.run(
+        ["docker", "run", "--rm", "-v", f"{args.vol}:/w", "alpine",
+         "cat", f"/w/{final}/nl/{TOP}.nl.v"], capture_output=True, text=True).stdout
+    if not nl:
+        print()
+        print(f"No netlist at {final}/nl/{TOP}.nl.v: the run did not finish.")
+        return 1
+    import re as _re
+    _cells = _re.findall(r"^\s*(sky130_fd_sc_hd__\w+)", nl, _re.M)
+    _logic = [c for c in _cells if not any(p in c for p in ("decap", "fill", "tap"))]
+    _flops = [c for c in _cells if _re.search(r"df[xr]|sdf", c)]
+    if len(_logic) < 1000 or len(_flops) < 300:
+        print()
+        print(f"REFUSING to pack: netlist has {len(_logic)} logic cells and "
+              f"{len(_flops)} flops — that is a stub, not this design.")
+        print("The flow's netlist was optimised away or the run did not finish.")
+        print("Re-run ./pdk/flow.sh and check pdk/runs/tt26e/final/metrics.json.")
+        return 1
+    print(f"  netlist OK: {len(_logic)} logic cells, {len(_flops)} flops")
+
     out = os.path.abspath(args.out)
     os.makedirs(os.path.join(out, "stats"), exist_ok=True)
     print()
@@ -116,6 +141,14 @@ def main() -> int:
         for f in sorted(files):
             p = os.path.join(root, f)
             print(f"  {os.path.relpath(p, out):45s} {os.path.getsize(p):>10,} B")
+
+    # The same gate the repo runs, so a bundle cannot leave this script broken.
+    gate = subprocess.run(["bash", "pdk/check-bundle.sh"], capture_output=True, text=True)
+    print()
+    print(gate.stdout.rstrip())
+    if gate.returncode != 0:
+        print("Bundle written but does NOT match the design — do not submit it.")
+        return 1
 
     print()
     print("NOTE: the shuttle's own job also writes an .oas with the TT_PDK")

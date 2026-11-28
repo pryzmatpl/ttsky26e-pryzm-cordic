@@ -110,7 +110,11 @@ def main():
         sources = [tb, os.path.join(pdk, "primitives.v"),
                    os.path.join(pdk, "sky130_fd_sc_hd.v"), src]
 
-    rc = subprocess.run(["iverilog", "-g2012", *extra, "-o", "sim.vvp", *sources],
+    # -I: src/ now carries `selftest_rom.vh`, included by project.v. Without
+    # the include path the elaboration fails with "Include file not found",
+    # which looks like a broken RTL rather than a missing search path.
+    rc = subprocess.run(["iverilog", "-g2012", *extra, "-I", os.path.dirname(src) if src else ".",
+                         "-o", "sim.vvp", *sources],
                         cwd=work, capture_output=True, text=True)
     if rc.returncode != 0:
         print(rc.stdout, rc.stderr)

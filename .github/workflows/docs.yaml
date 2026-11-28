@@ -1,0 +1,24 @@
+name: docs
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  docs:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      # This job is the datasheet gate: without it the project has no PDF and
+      # Tiny Tapeout reports "the docs workflow has failed" and leaves the
+      # project out of the datasheet. It runs the same check the shuttle runs
+      # (`tt_tool.py --check-docs`) and then builds the PDF, so a red X here
+      # means a red X on app.tinytapeout.com.
+      - name: Build docs
+        uses: TinyTapeout/tt-gds-action/docs@ttsky26e
+        with:
+          pdk: sky130A

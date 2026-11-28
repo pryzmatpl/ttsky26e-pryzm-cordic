@@ -1,8 +1,8 @@
 {
-  "commit": "1ab72f5240171308d4933ea1c240063ddefe9876",
-  "generatedAt": "2026-11-27T11:02:31.267896+00:00",
+  "commit": "beff512ac1c39f2cd6f35d5cdd97de61f62ca04e",
+  "generatedAt": "2026-11-28T09:24:49.627204+00:00",
   "designName": "tt_um_pryzm_cordic",
   "pdk": "sky130A",
   "librelane": "3.1.0.dev3",
-  "note": "Written by pdk/tt-submission.py. The shuttle's tt_tool.py writes its own commit_id.json; this records the commit OUR flow ran on, which is what the numbers in pdk/metrics.2x2.json describe."
+  "note": "Regenerated 2026-11-28 from the flow volume, which holds the post-precheck-fix build (334.880 x 225.760). The previous bundle described the superseded 334 x 216 build. The shuttle's tt_tool.py writes its own commit_id.json on its own CI run, which is the authoritative one."
 }

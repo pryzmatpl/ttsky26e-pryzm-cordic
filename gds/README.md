@@ -6,11 +6,11 @@
 | | |
 |---|---|
 | top cell | `tt_um_pryzm_cordic` |
-| die | **334.000 × 216.000 µm** (2x2 tile) |
-| layers | 42 |
-| shapes | 664,025 |
-| size | 7,035,220 bytes |
-| sha256 | `7978d44247264e85620d7dcab7700f20b19f776e9dc9d93ca22899cbc848786c` |
+| die | **334.880 × 225.760 µm** (2x2 tile) |
+| layers | 34 |
+| shapes | 729,117 |
+| size | 7,661,426 bytes |
+| sha256 | `21249e914747d285bac2bfabef4e795886d73e669d368a09a4c2c81b2f1bd36c` |
 
 Verified by `./pdk/verify-gds.sh`, which reads the file back with KLayout and
 compares its bbox against the LEF's `SIZE` — a file called `.gds` is not

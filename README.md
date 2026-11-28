@@ -53,7 +53,13 @@ the area is one adder plus a 16x16 multiplier rather than fifteen adders.
 3. **Full physical closure on sky130A.** LibreLane 3.1: **DRC 0, LVS "circuits
    match uniquely", setup TNS 0 at every corner, hold +0.11 ns, 0 slew
    violations**, GDS streamed (62,362 µm² of cells on a 2x2 die).
-4. **Re-derivable evidence.** Every number in `docs/evidence/` names the
+4. **Verifiable on the demo board, by hand.** On reset the die runs 41 vectors
+   through its own datapath and leaves the verdict on the status pins:
+   **LED1 lit = all vectors correct**, LED2 = a mismatch. No host, no laptop,
+   no logic analyser. The expected words are generated from the same golden
+   model the RTL is proven against (`bringup/gen-selftest-rom.py`), so the
+   built-in test cannot drift from the reference.
+5. **Re-derivable evidence.** Every number in `docs/evidence/` names the
    command that produced it. `docs/evidence/README.md` §5 lists what is *not*
    claimed.
 

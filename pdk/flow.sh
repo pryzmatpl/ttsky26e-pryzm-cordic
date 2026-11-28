@@ -38,7 +38,16 @@ tar -C "$ROOT" -cf - . | docker run --rm -i -v "$VOL":/w alpine sh -lc 'rm -rf /
 tar -C "$(dirname "$TT")" -cf - "$(basename "$TT")/tech" \
   | docker run --rm -i -v "$VOL":/w alpine sh -lc 'tar -xf - -C /w; rm -rf /w/tt_tech; mv /w/*/tech /w/tt_tech'
 
-docker run --rm -v "$VOL":/w -v "$PDKVOL":/pdk -e CLOCK_NS="$CLOCK_NS" \
+# DETACHED, not `--rm` in the foreground.
+#
+# The build host's session can end while detailed routing is still going (it
+# runs ~50 minutes on this die), and when the parent shell dies the foreground
+# container is killed mid-route — leaving a half-written run that looks like a
+# silent failure. A named container with `--rm` semantics restored by an
+# explicit rm survives the session and can be re-attached.
+RUNNER="${RUNNER:-tt26e-flow}"
+docker rm -f "$RUNNER" >/dev/null 2>&1 || true
+docker run -d --name "$RUNNER" -v "$VOL":/w -v "$PDKVOL":/pdk -e CLOCK_NS="$CLOCK_NS" \
   --entrypoint /bin/bash "$IMAGE" -lc '
 set -e
 cd /w
@@ -120,5 +129,13 @@ echo "--- running the flow (this takes minutes)"
 # pool sizes: the same RTL and config produced 0 and then 2779 DRC violations
 # on two runs. With the count pinned, a DRC result is a statement about the
 # design rather than about the machine.
-librelane pdk/config.json --run-tag tt26e -j "${JOBS:-8}" --condensed 2>&1 | tail -60 || true
+librelane pdk/config.json --run-tag tt26e -j "${JOBS:-8}" --condensed 2>&1 > /w/pdk/flow.out || true
 '
+
+# Follow the detached runner to completion, printing its tail. `docker wait`
+# survives; the container does not need this shell alive.
+echo "[flow] waiting on $RUNNER (silence is normal: detailed routing is ~50 min)"
+docker wait "$RUNNER" >/dev/null
+echo "[flow] container finished"
+docker logs --tail 40 "$RUNNER" 2>&1 || true
+docker rm -f "$RUNNER" >/dev/null 2>&1 || true

@@ -29,13 +29,13 @@ Numbers below are from the **shipping** build (`pdk/metrics.last.json`, the
 | Result | Value |
 |---|---|
 | Placed instance area | **67,825 µm²** (62,362 in the earlier build) |
-| Instances | **12,378** (10,810 in the earlier build) |
-| Cell-row utilisation | **65.2 %** of core |
+| Instances | **18,977** (12,378 before the self-test sequencer) |
+| Cell-row utilisation | **65.2 %** (the flow reports 5.0 % against the padded die bbox — the core figure is the one that means anything) |
 | Detailed-route violations | **0** |
 | LVS (netgen) | **"Circuits match uniquely"** — 0 errors |
 | **Slew violations** | **0** |
 | Max-cap violations | **0** |
-| Max-fanout violations | 26 (not gating; see §5) |
+| Max-fanout violations | **1** (was 26; the self-test re-synthesis improved it) |
 | GDS streamed | 334.880 × 225.760 µm, 729,117 shapes, sha256 `21249e91…` |
 | Hold slack, all corners | **+0.11 ns**, TNS 0 |
 
@@ -43,7 +43,7 @@ Numbers below are from the **shipping** build (`pdk/metrics.last.json`, the
 
 | Corner | Setup WS |
 |---|---|
-| max_ss_100C_1v60 (worst) | **+26.70 ns** (shipping build; +26.14 earlier) |
+| max_ss_100C_1v60 (worst) | **+11.41 ns** (self-test build; +26.70 before it) |
 | nom_ss_100C_1v60 | +26.51 ns |
 | min_ss_100C_1v60 | +26.90 ns |
 | max_tt_025C_1v80 | +35.60 ns |
@@ -113,7 +113,9 @@ one-line `volare enable`.
   invocation; the shuttle's `tt-gds-action@ttsky26e` will produce its own and
   the two are expected to agree, but that comparison has not been made. Until
   it is, "the shuttle accepts this" is unproven.
-- **26 max-fanout violations remain** (limit 6, configured conservatively).
+- **1 max-fanout violation remains** (limit 6, configured conservatively).
+  Down from 26 before the self-test sequencer was added; the re-synthesis
+  redistributed the high-fanout nets.
   They are not a timing or DRC blocker — setup and hold close at every corner,
   DRC is 0 and LVS matches — but they are reported here rather than omitted.
   Raising `MAX_FANOUT_CONSTRAINT` to the shuttle's typical 10 would clear them
@@ -159,12 +161,12 @@ shapes, 334 × 216 µm) described an earlier build and were corrected here.
 ### What is still not proven
 
 - **No silicon.** These are manufacturing files, not a fabricated die.
-- **No demo-board run.** The protocol needs a host to clock a multi-byte
-  sequence; `docs/KIT-VERIFICATION.md` states this and proposes the self-test
-  sequencer that would close it. That sequencer is **not implemented** — there
-  is no `selftest` logic in `src/project.v`.
+- **No demo-board run has happened yet.** The self-test sequencer is now
+  implemented and proven in simulation (`./test/run-selftest.sh`), so the die
+  *is* hand-verifiable: press reset, LED1 = pass. What remains is the physical
+  board, which is not in this environment.
 - **The `tt_submission/` bundle is stale.** It was written at 11:02 from the
   334 × 216 build; the GDS and LEF in `gds/` and `lef/` are the post-precheck-fix
   334.880 × 225.760 build from 13:37. Regenerate it with
   `python3 pdk/tt-submission.py` before citing its numbers.
-- **Max-fanout:** 26 violations (limit 6), not gating for DRC/LVS/timing.
+- **Max-fanout:** 1 violation (limit 6), not gating for DRC/LVS/timing.

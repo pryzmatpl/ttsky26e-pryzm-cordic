@@ -80,6 +80,35 @@ Option 1. It keeps the paid-for 2x2 tile, keeps the documented protocol, and
 turns "cannot be checked on the kit" into "press reset and read one LED" —
 which is the property that made the reference verifiable.
 
+## IMPLEMENTED — 2026-11-28
+
+Option 1 is in `src/project.v` and in the shipped GDS. The sequencer sits
+beside the engine and drives it through the same port a host would, so it tests
+the shipping datapath rather than a copy. On reset it runs 41 vectors; then:
+
+| pin | meaning |
+|---|---|
+| `uo[0]`-equivalent status: `uio_out[6]` | **lit = PASS** — every vector matched |
+| `uio_out[7]` | **lit = FAIL** — a vector did not match |
+
+The verdict HOLDS until a host claims the port by driving `WR` or `GO`, so
+there is no window to miss it. A host may also claim the port immediately; the
+sequencer yields on the same edge and resets the engine so the host's first
+byte is byte 0 of its own transaction.
+
+Proven in simulation, both directions:
+
+```
+./test/run-selftest.sh
+  shipped ROM    -> verdict latched, PASS held after 3000 idle clocks
+  corrupted ROM  -> FAIL held (the test can fail)
+```
+
+Cost: the die grew from 12,378 to 18,977 instances and the worst-corner setup
+margin fell from +26.70 ns to +11.41 ns, still TNS 0 with 10 ns to spare at
+20 MHz. Route DRC stayed 0 and LVS still matches uniquely. Max-fanout
+violations dropped from 26 to 1.
+
 ## What is already true, so the above is not confused with progress
 
 Verified today, on the hardened netlist rather than the RTL:

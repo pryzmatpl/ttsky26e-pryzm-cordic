@@ -30,12 +30,19 @@ module tb_selftest;
   integer g = 0;
   reg seen = 0;
 
+  // Only the PUBLIC pins are observed. `st_done`/`st_v` are internal and are
+  // renamed by synthesis, so touching them would make this bench RTL-only —
+  // and the gate-level netlist is exactly what ships.
   always @(posedge clk) begin
     g = g + 1;
-    if (dut.st_done && !seen) begin
+    // `st_done` is internal and renamed by synthesis, so the verdict is
+    // detected from the pins: either LED lighting means a verdict exists.
+    // (Watching only for LED1 missed the FAIL case entirely, and the bench
+    // then reported "never produced a verdict" — a bench bug that would have
+    // hidden a real failure.)
+    if ((uio_out[6] === 1'b1 || uio_out[7] === 1'b1) && !seen) begin
       seen = 1;
-      $display("verdict latched at clock %0d: LED1=%b LED2=%b (vector %0d/41)",
-               g, uio_out[6], uio_out[7], dut.st_v);
+      $display("verdict latched at clock %0d: LED1=%b LED2=%b", g, uio_out[6], uio_out[7]);
     end
     // Hold idle, as a human would, and require the verdict to still be there.
     if (seen && g > 3000) begin

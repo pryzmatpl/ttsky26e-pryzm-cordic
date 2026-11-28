@@ -303,23 +303,15 @@ module tt_um_pryzm_cordic (
 
   wire [2:0] nbytes = {1'b0, nres, 1'b0};
 
-  // `st_abort` is a synchronous reset of the engine, used only when a host
-  // seizes the port mid-self-test. It restores the operand byte counter so the
-  // host's first byte is byte 0, not byte 2 of an abandoned sequence.
-  //
-  // st_abort is tested INSIDE the block rather than added to the event list.
-  // Putting it in the sensitivity list makes the synthesiser reject the design:
-  // it reports "Multiple edge sensitive events found for this signal", because
-  // st_abort is not a reset and the process would have two async edges.
+  // There is deliberately NO abort path from the sequencer into the engine.
+  // An earlier version asserted one when a host seized the port mid-self-test,
+  // to drop the half-finished operand sequence. It was wrong twice: the pulse
+  // lasted two clocks and wiped the host's first byte, and it was unnecessary
+  // because the byte-serial protocol ALREADY has `srst` for exactly this — the
+  // host asserts it before every transaction. Relying on the documented reset
+  // instead of a private one keeps a single way to clear the byte counter.
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      opa <= 16'd0; opb <= 16'd0; wcnt <= 2'd0; rcnt <= 2'd0; nres <= 2'd1;
-      res0 <= 16'd0; res1 <= 16'd0; valid <= 1'b0; busy <= 1'b0;
-      cx <= 18'sd0; cy <= 18'sd0; cz <= 18'sd0; iter <= 4'd0; st <= S_IDLE;
-      vmode <= 1'b0; swapped <= 1'b0; shf <= 3'd0; shfl <= 3'd0;
-      qx <= 1'b0; qy <= 1'b0; q1 <= 1'b0; qm1 <= 1'b0; a16 <= 16'd0;
-      acc <= 34'sd0; mca <= 18'sd0; mcb <= 16'd0; mcnt <= 5'd0;
-    end else if (st_abort) begin
       opa <= 16'd0; opb <= 16'd0; wcnt <= 2'd0; rcnt <= 2'd0; nres <= 2'd1;
       res0 <= 16'd0; res1 <= 16'd0; valid <= 1'b0; busy <= 1'b0;
       cx <= 18'sd0; cy <= 18'sd0; cz <= 18'sd0; iter <= 4'd0; st <= S_IDLE;
@@ -524,10 +516,16 @@ module tt_um_pryzm_cordic (
   reg        st_pass;       // latched verdict
   reg        st_run;        // 1 while the sequencer owns the engine
   reg        st_done;       // 1 once a verdict is latched and being shown
-  reg        st_abort;      // 1-cycle pulse: the host took the port mid-run
   reg  [9:0] st_grace;      // clocks to wait after reset for a host to appear
 
-  wire [67:0] st_vw = st_vect(st_v);
+  // The vector word is REGISTERED, not read combinationally from the ROM.
+  // Reading it straight from `st_vect(st_v)` put a 41-way 68-bit mux in front
+  // of the comparator, in the same cycle as the index increment, and that path
+  // failed the slow corner by 1.80 ns. With `st_vr` the compare sees only
+  // register outputs, and the mux has a whole vector's worth of clocks to
+  // settle.
+  reg  [67:0] st_vr;
+  wire [67:0] st_vw = st_vr;
 
   // Field order is MSB-first because that is how the concatenation was
   // written: {op, a, b, e0, e1, nres}. Reading it LSB-first gave the
@@ -576,6 +574,7 @@ module tt_um_pryzm_cordic (
       st_v <= 6'd0; st_ph <= T_WAIT; st_b <= 3'd0; st_r <= 2'd0;
       st_r0 <= 16'd0; st_r1 <= 16'd0;
       st_pass <= 1'b0; st_run <= 1'b1; st_done <= 1'b0; st_grace <= 10'd0;
+      st_vr <= st_vect(6'd0);
     end else if (st_run && (uio_in[0] || uio_in[1])) begin
       // A host that drives WR or GO claims the port immediately, even while
       // the self-test is mid-run. This is what keeps the byte-serial protocol
@@ -583,20 +582,13 @@ module tt_um_pryzm_cordic (
       // cocotb bench (which starts writing straight away) collided with the
       // sequencer and read stale words.
       //
-      // `st_abort` is asserted for exactly this one cycle so the engine can
-      // drop whatever half-finished operand sequence the self-test left in it.
-      // Without that, the host's first byte landed in `wcnt` position 2 or 3
-      // and the first transaction silently used a spliced operand — which is
-      // precisely the one SINCOS failure this bench caught.
+      // The engine is left as it stands: the protocol's own `srst` is what
+      // clears the operand byte counter, and every host asserts it before a
+      // transaction. A private reset from here would be a second, undocumented
+      // way to do the same thing — and the first attempt at it swallowed the
+      // host's opening byte.
       st_run   <= 1'b0;
       st_done  <= 1'b0;
-      // Only abort if the sequencer had actually begun driving the engine.
-      // During the grace window it has written nothing, so an abort here
-      // would reset the engine on the same clock the host latches its first
-      // byte — the reset wins, the byte is lost, and every host transaction
-      // shifts by one byte. That is exactly the single SINCOS failure this
-      // bench kept reporting.
-      if (!st_abort && st_ph != T_WAIT) st_abort <= 1'b1;
     end else if (st_run) begin
       case (st_ph)
 
@@ -610,6 +602,7 @@ module tt_um_pryzm_cordic (
           // when pressing reset, and far above any host's first write.
           if (st_grace == 10'd511) begin
             st_v  <= 6'd0;
+            st_vr <= st_vect(6'd0);
             st_b  <= 3'd0;
             st_r  <= 2'd0;
             st_ph <= T_LOAD;
@@ -666,6 +659,7 @@ module tt_um_pryzm_cordic (
             st_ph   <= T_DONE;
           end else begin
             st_v  <= st_v + 6'd1;
+            st_vr <= st_vect(st_v + 6'd1);
             st_b  <= 3'd0;
             st_r  <= 2'd0;
             st_ph <= T_LOAD;
@@ -713,10 +707,11 @@ module tt_um_pryzm_cordic (
   end
 
   assign uo_out       = obyte;
-  // A displayed verdict owns the two status pins. Only once the host has
-  // claimed the port do valid/busy come back out.
-  assign uio_out[6]   = st_run ? st_pass : valid;
-  assign uio_out[7]   = st_run ? ~st_pass : busy;
+  // While the self-test RUNS: LED6=0, LED7=1 (running).
+  // When it has a verdict: LED6=pass, LED7=~pass, held until a host claims.
+  // After a host claims: the engine's own valid/busy come back out.
+  assign uio_out[6]   = st_run ? (st_done && st_pass)  : valid;
+  assign uio_out[7]   = st_run ? (st_done && !st_pass) : busy;
   assign uio_out[5:0] = 6'b000000;
   assign uio_oe       = 8'b1100_0000;
 

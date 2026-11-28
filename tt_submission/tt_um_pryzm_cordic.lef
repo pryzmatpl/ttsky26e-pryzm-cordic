@@ -108,7 +108,6 @@ MACRO tt_um_pryzm_cordic
   PIN ui_in[0]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.159000 ;
     PORT
       LAYER met4 ;
         RECT 138.310 224.760 138.610 225.760 ;
@@ -117,7 +116,6 @@ MACRO tt_um_pryzm_cordic
   PIN ui_in[1]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.159000 ;
     PORT
       LAYER met4 ;
         RECT 135.550 224.760 135.850 225.760 ;
@@ -126,7 +124,6 @@ MACRO tt_um_pryzm_cordic
   PIN ui_in[2]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.159000 ;
     PORT
       LAYER met4 ;
         RECT 132.790 224.760 133.090 225.760 ;
@@ -135,7 +132,6 @@ MACRO tt_um_pryzm_cordic
   PIN ui_in[3]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.159000 ;
     PORT
       LAYER met4 ;
         RECT 130.030 224.760 130.330 225.760 ;
@@ -144,7 +140,6 @@ MACRO tt_um_pryzm_cordic
   PIN ui_in[4]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.159000 ;
     PORT
       LAYER met4 ;
         RECT 127.270 224.760 127.570 225.760 ;
@@ -153,7 +148,6 @@ MACRO tt_um_pryzm_cordic
   PIN ui_in[5]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.159000 ;
     PORT
       LAYER met4 ;
         RECT 124.510 224.760 124.810 225.760 ;
@@ -162,7 +156,6 @@ MACRO tt_um_pryzm_cordic
   PIN ui_in[6]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.159000 ;
     PORT
       LAYER met4 ;
         RECT 121.750 224.760 122.050 225.760 ;
@@ -171,7 +164,6 @@ MACRO tt_um_pryzm_cordic
   PIN ui_in[7]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.159000 ;
     PORT
       LAYER met4 ;
         RECT 118.990 224.760 119.290 225.760 ;
@@ -198,8 +190,6 @@ MACRO tt_um_pryzm_cordic
   PIN uio_in[2]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.593700 ;
-    ANTENNADIFFAREA 0.434700 ;
     PORT
       LAYER met4 ;
         RECT 110.710 224.760 111.010 225.760 ;
@@ -208,7 +198,6 @@ MACRO tt_um_pryzm_cordic
   PIN uio_in[3]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.159000 ;
     PORT
       LAYER met4 ;
         RECT 107.950 224.760 108.250 225.760 ;
@@ -217,7 +206,6 @@ MACRO tt_um_pryzm_cordic
   PIN uio_in[4]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.159000 ;
     PORT
       LAYER met4 ;
         RECT 105.190 224.760 105.490 225.760 ;
@@ -226,7 +214,6 @@ MACRO tt_um_pryzm_cordic
   PIN uio_in[5]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.159000 ;
     PORT
       LAYER met4 ;
         RECT 102.430 224.760 102.730 225.760 ;
@@ -363,7 +350,7 @@ MACRO tt_um_pryzm_cordic
   PIN uio_out[6]
     DIRECTION OUTPUT ;
     USE SIGNAL ;
-    ANTENNADIFFAREA 0.445500 ;
+    ANTENNADIFFAREA 0.643500 ;
     PORT
       LAYER met4 ;
         RECT 55.510 224.760 55.810 225.760 ;
@@ -381,7 +368,6 @@ MACRO tt_um_pryzm_cordic
   PIN uo_out[0]
     DIRECTION OUTPUT ;
     USE SIGNAL ;
-    ANTENNADIFFAREA 0.445500 ;
     PORT
       LAYER met4 ;
         RECT 94.150 224.760 94.450 225.760 ;
@@ -390,7 +376,6 @@ MACRO tt_um_pryzm_cordic
   PIN uo_out[1]
     DIRECTION OUTPUT ;
     USE SIGNAL ;
-    ANTENNADIFFAREA 0.445500 ;
     PORT
       LAYER met4 ;
         RECT 91.390 224.760 91.690 225.760 ;
@@ -399,7 +384,6 @@ MACRO tt_um_pryzm_cordic
   PIN uo_out[2]
     DIRECTION OUTPUT ;
     USE SIGNAL ;
-    ANTENNADIFFAREA 0.445500 ;
     PORT
       LAYER met4 ;
         RECT 88.630 224.760 88.930 225.760 ;
@@ -408,7 +392,6 @@ MACRO tt_um_pryzm_cordic
   PIN uo_out[3]
     DIRECTION OUTPUT ;
     USE SIGNAL ;
-    ANTENNADIFFAREA 0.445500 ;
     PORT
       LAYER met4 ;
         RECT 85.870 224.760 86.170 225.760 ;
@@ -417,7 +400,6 @@ MACRO tt_um_pryzm_cordic
   PIN uo_out[4]
     DIRECTION OUTPUT ;
     USE SIGNAL ;
-    ANTENNADIFFAREA 0.445500 ;
     PORT
       LAYER met4 ;
         RECT 83.110 224.760 83.410 225.760 ;
@@ -426,7 +408,6 @@ MACRO tt_um_pryzm_cordic
   PIN uo_out[5]
     DIRECTION OUTPUT ;
     USE SIGNAL ;
-    ANTENNADIFFAREA 0.453750 ;
     PORT
       LAYER met4 ;
         RECT 80.350 224.760 80.650 225.760 ;
@@ -435,7 +416,6 @@ MACRO tt_um_pryzm_cordic
   PIN uo_out[6]
     DIRECTION OUTPUT ;
     USE SIGNAL ;
-    ANTENNADIFFAREA 0.445500 ;
     PORT
       LAYER met4 ;
         RECT 77.590 224.760 77.890 225.760 ;
@@ -444,7 +424,6 @@ MACRO tt_um_pryzm_cordic
   PIN uo_out[7]
     DIRECTION OUTPUT ;
     USE SIGNAL ;
-    ANTENNADIFFAREA 0.445500 ;
     PORT
       LAYER met4 ;
         RECT 74.830 224.760 75.130 225.760 ;
@@ -456,13 +435,12 @@ MACRO tt_um_pryzm_cordic
       LAYER li1 ;
         RECT 5.520 8.075 329.360 217.685 ;
       LAYER met1 ;
-        RECT 5.520 7.520 329.360 219.600 ;
+        RECT 5.520 7.920 329.360 217.840 ;
       LAYER met2 ;
-        RECT 8.380 7.490 326.960 222.885 ;
+        RECT 21.070 7.975 298.000 223.565 ;
       LAYER met3 ;
-        RECT 12.025 7.995 324.235 222.865 ;
+        RECT 21.050 7.995 298.020 223.545 ;
       LAYER met4 ;
-        RECT 23.295 224.360 30.270 224.760 ;
         RECT 31.370 224.360 33.030 224.760 ;
         RECT 34.130 224.360 35.790 224.760 ;
         RECT 36.890 224.360 38.550 224.760 ;
@@ -504,25 +482,14 @@ MACRO tt_um_pryzm_cordic
         RECT 136.250 224.360 137.910 224.760 ;
         RECT 139.010 224.360 140.670 224.760 ;
         RECT 141.770 224.360 143.430 224.760 ;
-        RECT 144.530 224.360 146.190 224.760 ;
-        RECT 147.290 224.360 317.105 224.760 ;
-        RECT 23.295 218.240 317.105 224.360 ;
-        RECT 23.295 13.095 23.940 218.240 ;
-        RECT 26.340 13.095 59.510 218.240 ;
-        RECT 61.910 13.095 62.810 218.240 ;
-        RECT 65.210 13.095 98.380 218.240 ;
-        RECT 100.780 13.095 101.680 218.240 ;
-        RECT 104.080 13.095 137.250 218.240 ;
-        RECT 139.650 13.095 140.550 218.240 ;
-        RECT 142.950 13.095 176.120 218.240 ;
-        RECT 178.520 13.095 179.420 218.240 ;
-        RECT 181.820 13.095 214.990 218.240 ;
-        RECT 217.390 13.095 218.290 218.240 ;
-        RECT 220.690 13.095 253.860 218.240 ;
-        RECT 256.260 13.095 257.160 218.240 ;
-        RECT 259.560 13.095 292.730 218.240 ;
-        RECT 295.130 13.095 296.030 218.240 ;
-        RECT 298.430 13.095 317.105 218.240 ;
+        RECT 30.655 218.240 144.145 224.360 ;
+        RECT 30.655 200.775 59.510 218.240 ;
+        RECT 61.910 200.775 62.810 218.240 ;
+        RECT 65.210 200.775 98.380 218.240 ;
+        RECT 100.780 200.775 101.680 218.240 ;
+        RECT 104.080 200.775 137.250 218.240 ;
+        RECT 139.650 200.775 140.550 218.240 ;
+        RECT 142.950 200.775 144.145 218.240 ;
   END
 END tt_um_pryzm_cordic
 END LIBRARY

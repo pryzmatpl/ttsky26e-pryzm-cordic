@@ -1,6 +1,6 @@
 # tt_um_pryzm_cordic — TTSKY26e submission
 
-A 16-bit four-operation CORDIC engine on a 1x2 tile, generated and verified by
+A 16-bit four-operation CORDIC engine on a 2x2 tile, generated and verified by
 **Jaisiu / PhotonIP**. Built to prove the toolchain end to end: model → RTL →
 simulation → synthesis → GDS → a design a foundry can actually make.
 
@@ -50,15 +50,34 @@ the area is one adder plus a 16x16 multiplier rather than fifteen adders.
 2. **Numeric conformance.** The model is separately scored against the
    real-valued functions: sin/cos 21 LSB, atan2 28 LSB, hypot 6 LSB, mul 1 LSB
    — all inside the 32 LSB (2^-10) budget.
-3. **Full physical closure on sky130A.** LibreLane 3.1: **DRC 0, LVS "circuits
-   match uniquely", setup TNS 0 at every corner, hold +0.11 ns, 0 slew
-   violations**, GDS streamed (62,362 µm² of cells on a 2x2 die).
+3. **Full physical closure on sky130A.** **DRC 0, LVS "circuits match
+   uniquely", setup TNS 0 at every corner (+23.78 ns worst), hold +0.11 ns**,
+   GDS streamed (738,356 shapes, 52,355 µm² of standard cells on a 2x2 die).
+   Three families of violations remain and are stated in `docs/evidence/`:
+   35 max-fanout, 6 max-slew, 2 max-cap. None gate DRC/LVS/timing.
 4. **Verifiable on the demo board, by hand.** On reset the die runs 41 vectors
    through its own datapath and leaves the verdict on the status pins:
-   **LED1 lit = all vectors correct**, LED2 = a mismatch. No host, no laptop,
+   **`uio_out[6]` lit = all vectors correct**, `uio_out[7]` = a mismatch. No host, no laptop,
    no logic analyser. The expected words are generated from the same golden
    model the RTL is proven against (`bringup/gen-selftest-rom.py`), so the
    built-in test cannot drift from the reference.
+
+   This is proven twice, and the second one is the one that counts:
+
+   | Claim | Command | Result |
+   |---|---|---|
+   | the LOGIC decides PASS correctly | `./test/run-selftest.sh` | PASS held; corrupted ROM → FAIL at vector 5 |
+   | the SHIPPED NETLIST still reaches it | `./test/run-selftest-gl.sh` | verdict at clock 1822, PASS held |
+
+   The second runs against `tt_submission/tt_um_pryzm_cordic.v` — the
+   placed-and-routed cells on the real pinout with the real power pins.
+
+   **On the breadboard**: press reset. `uio_out[7]` lights for the duration of
+   the run (~1800 clocks, well under a millisecond at 20 MHz), then the verdict
+   latches: `uio_out[6]` lit = all 41 vectors correct, `uio_out[7]` lit = a
+   mismatch. The verdict holds until a host claims the port, so there is no
+   window to miss it. The demo board's own silkscreen labels those indicators;
+   this document deliberately does not guess at them.
 5. **Re-derivable evidence.** Every number in `docs/evidence/` names the
    command that produced it. `docs/evidence/README.md` §5 lists what is *not*
    claimed.

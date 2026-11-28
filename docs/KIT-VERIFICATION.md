@@ -88,26 +88,38 @@ the shipping datapath rather than a copy. On reset it runs 41 vectors; then:
 
 | pin | meaning |
 |---|---|
-| `uo[0]`-equivalent status: `uio_out[6]` | **lit = PASS** — every vector matched |
-| `uio_out[7]` | **lit = FAIL** — a vector did not match |
+| `uio_out[6]` | **lit = PASS** — every vector matched |
+| `uio_out[7]` | **lit = FAIL** — a vector did not match, or the run is still going |
+
+While the sequence runs, `uio_out[6]` is low and `uio_out[7]` is high, so the
+pair never reads as an ambiguous "nothing happened".
 
 The verdict HOLDS until a host claims the port by driving `WR` or `GO`, so
 there is no window to miss it. A host may also claim the port immediately; the
 sequencer yields on the same edge and resets the engine so the host's first
 byte is byte 0 of its own transaction.
 
-Proven in simulation, both directions:
+Proven in simulation against the RTL, and separately against the netlist that
+ships:
 
 ```
-./test/run-selftest.sh
-  shipped ROM    -> verdict latched, PASS held after 3000 idle clocks
-  corrupted ROM  -> FAIL held (the test can fail)
+./test/run-selftest.sh      # the logic decides correctly
+  shipped ROM    -> verdict latched at clock 1822, PASS held after 3000 idle clocks
+  corrupted ROM  -> FAIL held at vector 5 (the test can fail)
+
+./test/run-selftest-gl.sh   # the placed-and-routed cells still reach it
+  -> verdict latched at clock 1822, PASS held
 ```
 
-Cost: the die grew from 12,378 to 18,977 instances and the worst-corner setup
-margin fell from +26.70 ns to +11.41 ns, still TNS 0 with 10 ns to spare at
-20 MHz. Route DRC stayed 0 and LVS still matches uniquely. Max-fanout
-violations dropped from 26 to 1.
+The corrupted-ROM leg exists only in the RTL run, deliberately: the expected
+words are baked into the netlist as a case statement, so rewriting
+`src/selftest_rom.vh` cannot change a netlist that has already been synthesised.
+A test that cannot fail is worse than no test.
+
+Cost, measured on the shipping 50 ns build: 10,865 instances (5,851 standard
+cells, 4,864 logic), worst-corner setup **+23.78 ns** with TNS 0 at every
+corner, hold +0.11 ns. Route DRC 0, LVS matches uniquely. Three families of
+violations remain and are stated: 35 max-fanout, 6 max-slew, 2 max-cap.
 
 ## What is already true, so the above is not confused with progress
 
@@ -115,11 +127,11 @@ Verified today, on the hardened netlist rather than the RTL:
 
 | check | result |
 |---|---|
-| gate-level vs golden model (word-exact) | **1936/1936 vectors, 0 fail** |
-| sincos | 314/314 |
-| atan2 | 787/787 |
-| hypot | 782/782 |
-| mul | 53/53 |
+| gate-level vs golden model (word-exact) | **1896/1896 vectors, 0 fail** |
+| sincos | 304/304 |
+| atan2 | 777/777 |
+| hypot | 772/772 |
+| mul | 43/43 |
 | KLayout manufacturing DRC | 0 errors |
 | LVS | circuits match uniquely |
 

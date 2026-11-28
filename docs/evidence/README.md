@@ -171,7 +171,7 @@ shapes, 334 × 216 µm) described an earlier build and were corrected here.
 - **No silicon.** These are manufacturing files, not a fabricated die.
 - **No demo-board run has happened yet.** The self-test sequencer is now
   implemented and proven in simulation (`./test/run-selftest.sh`), so the die
-  *is* hand-verifiable: press reset, LED1 = pass. What remains is the physical
+  *is* hand-verifiable: press reset, `uio_out[6]` lit = pass. What remains is the physical
   board, which is not in this environment.
 - **The `tt_submission/` bundle is stale.** It was written at 11:02 from the
   334 × 216 build; the GDS and LEF in `gds/` and `lef/` are the post-precheck-fix

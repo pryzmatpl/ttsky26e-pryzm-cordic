@@ -76,6 +76,17 @@ jobs:
         run: bash pdk/check-bundle.sh
         if: always()
 
+      # The breadboard claim, proven on the netlist that ships rather than on
+      # the RTL. These are different claims: run-selftest.sh proves the logic
+      # decides PASS correctly, this proves the placed-and-routed cells can
+      # still reach that verdict on the real pinout with the real power pins.
+      # It needs the sky130 cell models, so it is skipped when they are absent
+      # and the skip is printed — a silent skip is how the stale-netlist defect
+      # survived a gate-level run on 2026-11-28.
+      - name: Self-test reaches its verdict on the hardened netlist
+        run: bash test/run-selftest-gl.sh
+        if: always()
+
       - name: Test Summary
         uses: test-summary/action@v2.4
         with:

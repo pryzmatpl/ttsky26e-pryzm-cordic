@@ -19,11 +19,26 @@ module tb_selftest;
   reg [7:0] ui_in = 0, uio_in = 0;
   wire [7:0] uo_out, uio_out, uio_oe;
 
+  // At gate level the hardened top has VPWR/VGND ports and every cell reads
+  // them for its power pins. Left unconnected they float, every cell output is
+  // X, and the bench sees nothing — which reads as "the sequencer never ran".
+  // The RTL has no such ports, so they exist only under -DGL_TEST.
+`ifdef GL_TEST
+  wire VPWR = 1'b1;
+  wire VGND = 1'b0;
+  tt_um_pryzm_cordic dut (
+      .ui_in(ui_in), .uo_out(uo_out),
+      .uio_in(uio_in), .uio_out(uio_out), .uio_oe(uio_oe),
+      .ena(1'b1), .clk(clk), .rst_n(rst_n),
+      .VPWR(VPWR), .VGND(VGND)
+  );
+`else
   tt_um_pryzm_cordic dut (
       .ui_in(ui_in), .uo_out(uo_out),
       .uio_in(uio_in), .uio_out(uio_out), .uio_oe(uio_oe),
       .ena(1'b1), .clk(clk), .rst_n(rst_n)
   );
+`endif
 
   always #12.5 clk = ~clk;
 

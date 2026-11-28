@@ -22,32 +22,39 @@ mathematics".
 
 Run: `./pdk/flow.sh` · reported by `./pdk/signoff.sh` and `python3 pdk/metrics.py`
 
-Numbers below are from the **shipping** build (`pdk/metrics.last.json`, the
-13:34 precheck-fix run), not the superseded 334 × 216 build that
-`pdk/metrics.2x2.json` records. Where the two differ, both are given.
+Numbers below are from the **shipping** build: `pdk/metrics.last.json`, from
+the 50 ns (20 MHz) run that finished 2026-11-28 13:12 and whose GDS is the one
+in `gds/` and `tt_submission/`. Earlier figures are quoted only where the
+difference explains something.
 
 | Result | Value |
 |---|---|
-| Placed instance area | **67,825 µm²** (62,362 in the earlier build) |
-| Instances | **18,977** (12,378 before the self-test sequencer) |
-| Cell-row utilisation | **65.2 %** (the flow reports 5.0 % against the padded die bbox — the core figure is the one that means anything) |
+| Core area | **67,825 µm²** (die 75,602 µm²) |
+| Instances | **10,865** (the self-test build; 12,378 before it) |
+| Standard-cell utilisation | **77.2 %** of core — 52,355 µm² of 67,825 µm² (5,851 standard-cell instances) |
 | Detailed-route violations | **0** |
 | LVS (netgen) | **"Circuits match uniquely"** — 0 errors |
-| **Slew violations** | **0** |
-| Max-cap violations | **0** |
-| Max-fanout violations | **1** (was 26; the self-test re-synthesis improved it) |
-| GDS streamed | 334.880 × 225.760 µm, 729,117 shapes, sha256 `21249e91…` |
+| Slew violations | **6** (limit derived from the library; not gating) |
+| Max-cap violations | **2** (not gating) |
+| Max-fanout violations | **35** (limit 6, not gating) |
+| GDS streamed | 334.880 × 225.760 µm, 738,356 shapes, sha256 `d1c96544889d4424…` |
 | Hold slack, all corners | **+0.11 ns**, TNS 0 |
 
 ### Timing at 20 MHz (50 ns)
 
+At 50 ns (20 MHz) every corner has more than 23 ns of margin, so the die is
+comfortably inside its period. The worst corner is `max_ss_100C_1v60`.
+
 | Corner | Setup WS |
 |---|---|
-| max_ss_100C_1v60 (worst) | **+11.41 ns** (self-test build; +26.70 before it) |
-| nom_ss_100C_1v60 | +26.51 ns |
-| min_ss_100C_1v60 | +26.90 ns |
-| max_tt_025C_1v80 | +35.60 ns |
-| max_ff_n40C_1v95 | +37.12 ns |
+| **max_ss_100C_1v60 (worst)** | **+23.78 ns** |
+| nom_ss_100C_1v60 | +24.19 ns |
+| min_ss_100C_1v60 | +24.62 ns |
+| max_tt_025C_1v80 | +31.83 ns |
+| nom_tt_025C_1v80 | +32.04 ns |
+| max_ff_n40C_1v95 | +34.67 ns |
+
+TNS is 0 at every corner in both directions.
 
 **Setup TNS 0 at every corner.** The design closes at 20 MHz with large
 margin; an earlier run at 40 ns (25 MHz) failed the slow corner by 1.67 ns, so
@@ -113,9 +120,10 @@ one-line `volare enable`.
   invocation; the shuttle's `tt-gds-action@ttsky26e` will produce its own and
   the two are expected to agree, but that comparison has not been made. Until
   it is, "the shuttle accepts this" is unproven.
-- **1 max-fanout violation remains** (limit 6, configured conservatively).
-  Down from 26 before the self-test sequencer was added; the re-synthesis
-  redistributed the high-fanout nets.
+- **35 max-fanout violations remain** (limit 6, configured conservatively).
+- **6 max-slew and 2 max-cap violations remain.** They appeared with the
+  self-test build and do not gate DRC/LVS/timing, but they are real and are
+  not claimed clean.
   They are not a timing or DRC blocker — setup and hold close at every corner,
   DRC is 0 and LVS matches — but they are reported here rather than omitted.
   Raising `MAX_FANOUT_CONSTRAINT` to the shuttle's typical 10 would clear them
@@ -169,4 +177,5 @@ shapes, 334 × 216 µm) described an earlier build and were corrected here.
   334 × 216 build; the GDS and LEF in `gds/` and `lef/` are the post-precheck-fix
   334.880 × 225.760 build from 13:37. Regenerate it with
   `python3 pdk/tt-submission.py` before citing its numbers.
-- **Max-fanout:** 1 violation (limit 6), not gating for DRC/LVS/timing.
+- **Max-fanout:** 35 violations (limit 6); **max-slew:** 6; **max-cap:** 2.
+  None gate DRC/LVS/timing; all are stated rather than buried.

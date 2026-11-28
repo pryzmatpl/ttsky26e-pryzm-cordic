@@ -6,10 +6,15 @@ jobs:
   test:
     runs-on: ubuntu-24.04
     steps:
+      # `lfs: true` is not optional here. The GDS is tracked through Git LFS,
+      # so without it the checkout holds a 130-byte pointer and every
+      # comparison downstream measures a text file: the bundle gate reported
+      # "gds: 132 B, 0 placements" and blamed the bundle for a checkout bug.
       - name: Checkout repo
         uses: actions/checkout@v6
         with:
           submodules: recursive
+          lfs: true
 
       - name: Install iverilog
         shell: bash

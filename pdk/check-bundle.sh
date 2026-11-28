@@ -49,6 +49,17 @@ for f in (NETLIST, GDS):
         print(f"missing: {f}")
         sys.exit(1)
 
+# Git LFS pointers are the failure mode that looks like a corrupt design. A
+# checkout without `lfs: true` leaves "version https://git-lfs..." where the
+# GDS should be, and every record walker downstream reports a truncated file
+# and blames the bundle. Name the actual cause instead.
+for f in (NETLIST, GDS):
+    head = f.open("rb").read(80)
+    if head.startswith(b"version https://git-lfs"):
+        print(f"{f} is a Git LFS pointer ({f.stat().st_size} B), not the file.")
+        print("Check out with `lfs: true` — this is a checkout bug, not a design bug.")
+        sys.exit(1)
+
 text = NETLIST.read_text(errors="replace")
 
 if not re.search(rf"^\s*module\s+{TOP}\b", text, re.M):
